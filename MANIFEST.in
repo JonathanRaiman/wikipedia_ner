@@ -1,2 +1,2 @@
 include README.md
-include Wikipedia\ to\ Named\ Entity\ Recognition.ipynb
+include *.ipynb
