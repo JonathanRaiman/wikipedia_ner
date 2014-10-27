@@ -11,7 +11,6 @@ setup(
     long_description=readfile('README.md'),
     ext_modules=[],
     packages=find_packages(),
-    py_modules = ["epub_conversion"],
     author='Jonathan Raiman',
     author_email='jraiman at mit dot edu',
     url='https://github.com/JonathanRaiman/wikipedia_ner',
