@@ -6,7 +6,7 @@ def readfile(fname):
 
 setup(
     name='wikipedia-ner',
-    version='0.0.1',
+    version='0.0.2',
     description='Python package for creating labeled examples from wiki dumps',
     long_description=readfile('README.md'),
     ext_modules=[],
@@ -14,8 +14,8 @@ setup(
     py_modules = ["epub_conversion"],
     author='Jonathan Raiman',
     author_email='jraiman at mit dot edu',
-    url='',
-    download_url='',
+    url='https://github.com/JonathanRaiman/wikipedia_ner',
+    download_url='https://github.com/JonathanRaiman/wikipedia_ner',
     keywords='XML, epub, tokenization, NLP',
     license='MIT',
     platforms='any',
