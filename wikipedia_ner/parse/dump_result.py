@@ -101,6 +101,10 @@ class DumpResultSqlite(DumpResult):
 		self.get_obj_from_db = get_obj_from_db
 
 		self.commit_frequency = commit_frequency
+		self.to_insert = {}
+		self.to_insert_parents = {}
+		self.to_update = {}
+		self.to_update_parents = {}
 		DumpResult.__init__(self)
 
 	def should_save_to_db(self):
