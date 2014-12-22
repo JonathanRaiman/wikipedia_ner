@@ -80,6 +80,11 @@ class DumpResult:
 
 import sqlite3
 from .sqlite_utils import create_schema
+import pickle
+
+sqlite3.register_converter("pickle", pickle.loads)
+sqlite3.register_adapter(list, pickle.dumps)
+sqlite3.register_adapter(set, pickle.dumps)
 
 class DumpResultSqlite(DumpResult):
 	def __init__(self, sqlite_path, commit_frequency = 50):
@@ -118,11 +123,12 @@ class DumpResultSqlite(DumpResult):
 		insert_keys = self.to_insert.keys()
 
 		for key in insert_keys:
+			# create a new saved copy in the db:
 			self.insert_into_db(self.cursor,
 				(
 					self.targets[key],
 					self.to_insert[key],
-					set(self.to_insert_parents[key])
+					self.to_insert_parents[key]
 				)
 			)
 			self.stored_lines[key] = True
@@ -132,11 +138,15 @@ class DumpResultSqlite(DumpResult):
 		update_keys = self.to_update.keys()
 
 		for key in update_keys:
+			# get previous saved copy:
+			old_key, lines, parents  = self.get_obj_from_db(self.cursor, self.targets[key])
+
+			# update that copy
 			self.update_in_db(self.cursor,
 				(
 					self.targets[key],
-					self.to_update[key],
-					set(self.to_update_parents[key])
+					lines + self.to_update[key],
+					parents + self.to_update_parents[key]
 				)
 			)
 			del self.to_update[key]
@@ -174,7 +184,7 @@ class DumpResultSqlite(DumpResult):
 			self.to_update[article_name].append(
 				(line, list(self.replace_links_with_index(links)))
 			)
-			cat_links = [(link[0], self.targets[link[0]]) for link in links if link[0].startswith("Category")]
+			cat_links = [self.targets[link[0]] for link in links if link[0].startswith("Category")]
 
 			if len(cat_links) > 0:
 				self.to_update_parents[article_name].append(
@@ -192,14 +202,14 @@ class DumpResultSqlite(DumpResult):
 
 			if article_name not in self.to_insert:
 				self.to_insert[article_name] = []
-				self.to_insert_parents[article_name] = []
+				self.to_insert_parents[article_name] = set()
 
 			self.to_insert[article_name].append(
 				(line, list(self.replace_links_with_index(links)))
 			)
-			cat_links = [(link[0], self.targets[link[0]]) for link in links if link[0].startswith("Category")]
+			cat_links = [self.targets[link[0]] for link in links if link[0].startswith("Category")]
 			if len(cat_links) > 0:
-				self.to_insert_parents[article_name].append(
+				self.to_insert_parents[article_name].update(
 					cat_links
 				)
 
