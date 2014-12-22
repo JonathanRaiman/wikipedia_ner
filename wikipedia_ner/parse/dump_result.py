@@ -118,7 +118,7 @@ class DumpResultSqlite(DumpResult):
 		insert_keys = self.to_insert.keys()
 
 		for key in insert_keys:
-			self.insert_in_db(self.cursor,
+			self.insert_into_db(self.cursor,
 				(
 					self.targets[key],
 					self.to_insert[key],
