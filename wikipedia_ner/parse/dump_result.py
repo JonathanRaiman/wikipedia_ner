@@ -38,8 +38,9 @@ class DumpResult:
 
 		"""
 
-		if self.stored_lines.get(article_name, None) == None:
-
+		if article_name in self.stored_lines:
+			page = self.stored_lines[article_name]
+		else:
 			# get the id of this article:
 			if self.targets.get(article_name):
 				article_id = self.targets[article_name]
@@ -50,8 +51,6 @@ class DumpResult:
 
 			page = ParsedPageChild(article_name, article_id)
 			self.stored_lines[article_name] = page
-		else:
-			page = self.stored_lines[article_name]
 
 		page.lines.append(
 			(line, list(self.replace_links_with_index(links)))
@@ -78,3 +77,129 @@ class DumpResult:
 				self.targets[target] = len(self.targets)
 				self.index2target.append(target)
 				yield((self.targets[target], anchor))
+
+import sqlite3
+from .sqlite_utils import create_schema
+
+class DumpResultSqlite(DumpResult):
+	def __init__(self, sqlite_path, commit_frequency = 50):
+		self.sqlite_path = sqlite_path
+		self.sqlite_conn = sqlite3.connect(
+			sqlite_path,
+			detect_types=sqlite3.PARSE_DECLTYPES)
+
+		self.cursor = self.sqlite_conn.cursor()
+		insert_into_db, update_in_db, get_obj_from_db = create_schema(self.cursor,
+			[
+				("lines", "pickle"),
+				("parents", "pickle")
+			],
+			"articles")
+
+		self.insert_into_db = insert_into_db
+		self.update_in_db = update_in_db
+		self.get_obj_from_db = get_obj_from_db
+
+		self.commit_frequency = commit_frequency
+		DumpResult.__init__(self)
+
+	def should_save_to_db(self):
+		return (
+			(len(self.to_insert)         > self.commit_frequency) or \
+			(len(self.to_insert_parents) > self.commit_frequency) or \
+			(len(self.to_update)         > self.commit_frequency) or \
+			(len(self.to_update_parents) > self.commit_frequency))
+
+	def update_db(self):
+		insert_keys = self.to_insert.keys()
+
+		for key in insert_keys:
+			self.insert_in_db(self.cursor,
+				(
+					self.targets[key],
+					self.to_insert[key],
+					set(self.to_insert_parents[key])
+				)
+			)
+			self.stored_lines[key] = True
+			del self.to_insert[key]
+			del self.to_insert_parents[key]
+
+		update_keys = self.to_update.keys()
+
+		for key in update_keys:
+			self.update_in_db(self.cursor,
+				(
+					self.targets[key],
+					self.to_update[key],
+					set(self.to_update_parents[key])
+				)
+			)
+			del self.to_update[key]
+			del self.to_update_parents[key]
+
+	def observe_line(self, line, article_name, links):
+		"""
+		Adds a set of line to the result by integrating the
+		article name, the links, and converting the links to their
+		unique ids as stored previously.
+
+		Inputs
+		------
+
+		             line list<str> : a list of strings with double bracket
+		                              wiki syntax inter wiki links
+		           article_name str : the name of the article these links come
+		                              from.
+		links list<tuple<str, str>> : a pairing of target and anchor text
+
+		"""
+
+		if article_name in self.stored_lines:
+			# remember whether the page exists in the db:
+			page = self.stored_lines[article_name]
+
+			page.lines.append(
+				(line, list(self.replace_links_with_index(links)))
+			)
+
+			if article_name not in self.to_update:
+				self.to_update[article_name] = []
+				self.to_update_parents[article_name] = []
+			
+			self.to_update[article_name].append(
+				(line, list(self.replace_links_with_index(links)))
+			)
+			cat_links = [(link[0], self.targets[link[0]]) for link in links if link[0].startswith("Category")]
+
+			if len(cat_links) > 0:
+				self.to_update_parents[article_name].append(
+					cat_links
+				)
+
+		else:
+			# get the id of this article:
+			if self.targets.get(article_name):
+				article_id = self.targets[article_name]
+			else:
+				article_id = len(self.targets)
+				self.targets[article_name] = article_id
+				self.index2target.append(article_name)
+
+			if article_name not in self.to_insert:
+				self.to_insert[article_name] = []
+				self.to_insert_parents[article_name] = []
+
+			self.to_insert[article_name].append(
+				(line, list(self.replace_links_with_index(links)))
+			)
+			cat_links = [(link[0], self.targets[link[0]]) for link in links if link[0].startswith("Category")]
+			if len(cat_links) > 0:
+				self.to_insert_parents[article_name].append(
+					cat_links
+				)
+
+			self.target_counters.update((link[0] for link in links))
+
+		if self.should_save_to_db():
+			self.update_db()

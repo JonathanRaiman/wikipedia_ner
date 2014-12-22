@@ -1,9 +1,9 @@
 from epub_conversion import convert_wiki_to_lines
 from epub_conversion.wiki_decoder import almost_smart_open
 from .utils import line_converter
-from .dump_result import DumpResult
+from .dump_result import DumpResult, DumpResultSqlite
 
-def parse_dump(path, max_articles = 1000, report_every = 100, clear_output = False):
+def parse_dump(path, sqlite= False, commit_frequency = 300, sqlite_path="out.db", max_articles = 1000, report_every = 100, clear_output = False):
 	"""
 	Convert a dump to a set of articles with their
 	text tokenized and the intrawiki links separated and
@@ -26,7 +26,10 @@ def parse_dump(path, max_articles = 1000, report_every = 100, clear_output = Fal
 	result DumpResult : the result of the parse.
 
 	"""
-	result = DumpResult()
+	if sqlite:
+		result = DumpResultSqlite(sqlite_path)
+	else:
+		result = DumpResult()
 	wiki = almost_smart_open(path)
 
 	for line, article_name, links in convert_wiki_to_lines(
@@ -36,5 +39,9 @@ def parse_dump(path, max_articles = 1000, report_every = 100, clear_output = Fal
 		report_every = report_every,
 		line_converter = line_converter):
 			result.observe_line(line, article_name, links)
+
+	if sqlite:
+		# flush out any remaining pieces to put in the db.
+		result.update_db()
 
 	return result

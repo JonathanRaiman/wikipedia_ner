@@ -23,7 +23,7 @@ class ParsedPageChild(ParsedPage):
 
 		"""
 		for parent, parent_id in parents:
-			if ParsedPage.categories.get(parent, None):
+			if parent in ParsedPage.categories:
 				parent_page = ParsedPage.categories[parent]
 			else:
 				parent_page = ParsedPageParent(parent, parent_id)
