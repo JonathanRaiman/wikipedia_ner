@@ -6,7 +6,7 @@ def readfile(fname):
 
 setup(
     name='wikipedia-ner',
-    version='0.0.12',
+    version='0.0.16',
     description='Python package for creating labeled examples from wiki dumps',
     long_description=readfile('README.md'),
     ext_modules=[],

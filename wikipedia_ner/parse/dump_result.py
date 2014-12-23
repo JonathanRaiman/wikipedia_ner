@@ -93,8 +93,8 @@ class DumpResultSqlite(DumpResult):
 			sqlite_path,
 			detect_types=sqlite3.PARSE_DECLTYPES)
 
-		self.cursor = self.sqlite_conn.cursor()
-		insert_into_db, update_in_db, get_obj_from_db = create_schema(self.cursor,
+		insert_into_db, update_in_db, get_obj_from_db = create_schema(
+			self.sqlite_conn,
 			[
 				("lines", "pickle"),
 				("parents", "pickle")
@@ -120,11 +120,11 @@ class DumpResultSqlite(DumpResult):
 			(len(self.to_update_parents) > self.commit_frequency))
 
 	def update_db(self):
-		insert_keys = self.to_insert.keys()
+		insert_keys = list(self.to_insert.keys())
 
 		for key in insert_keys:
 			# create a new saved copy in the db:
-			self.insert_into_db(self.cursor,
+			self.insert_into_db(
 				(
 					self.targets[key],
 					self.to_insert[key],
@@ -135,18 +135,19 @@ class DumpResultSqlite(DumpResult):
 			del self.to_insert[key]
 			del self.to_insert_parents[key]
 
-		update_keys = self.to_update.keys()
+		update_keys = list(self.to_update.keys())
 
 		for key in update_keys:
+			object_id = self.targets[key]
 			# get previous saved copy:
-			old_key, lines, parents  = self.get_obj_from_db(self.cursor, self.targets[key])
+			old_key, lines, parents = self.get_obj_from_db(object_id)
 
 			# update that copy
-			self.update_in_db(self.cursor,
+			self.update_in_db(
 				(
-					self.targets[key],
+					object_id,
 					lines + self.to_update[key],
-					parents + self.to_update_parents[key]
+					parents.update( self.to_update_parents[key] )
 				)
 			)
 			del self.to_update[key]
@@ -171,15 +172,10 @@ class DumpResultSqlite(DumpResult):
 
 		if article_name in self.stored_lines:
 			# remember whether the page exists in the db:
-			page = self.stored_lines[article_name]
-
-			page.lines.append(
-				(line, list(self.replace_links_with_index(links)))
-			)
 
 			if article_name not in self.to_update:
 				self.to_update[article_name] = []
-				self.to_update_parents[article_name] = []
+				self.to_update_parents[article_name] = set()
 			
 			self.to_update[article_name].append(
 				(line, list(self.replace_links_with_index(links)))
@@ -187,7 +183,7 @@ class DumpResultSqlite(DumpResult):
 			cat_links = [self.targets[link[0]] for link in links if link[0].startswith("Category")]
 
 			if len(cat_links) > 0:
-				self.to_update_parents[article_name].append(
+				self.to_update_parents[article_name].update(
 					cat_links
 				)
 
