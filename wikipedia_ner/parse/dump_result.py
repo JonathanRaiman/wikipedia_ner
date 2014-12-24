@@ -42,7 +42,7 @@ class DumpResult:
 			page = self.stored_lines[article_name]
 		else:
 			# get the id of this article:
-			if self.targets.get(article_name):
+			if article_name in self.targets:
 				article_id = self.targets[article_name]
 			else:
 				article_id = len(self.targets)
@@ -71,7 +71,7 @@ class DumpResult:
 
 		"""
 		for target, anchor in links:
-			if self.targets.get(target):
+			if target in self.targets:
 				yield((self.targets[target], anchor))
 			else:
 				self.targets[target] = len(self.targets)
@@ -189,7 +189,7 @@ class DumpResultSqlite(DumpResult):
 
 		else:
 			# get the id of this article:
-			if self.targets.get(article_name):
+			if article_name in self.targets:
 				article_id = self.targets[article_name]
 			else:
 				article_id = len(self.targets)

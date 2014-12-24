@@ -23,12 +23,14 @@ def create_schema(conn, schema, table_name):
         pass
 
     def insert_into_db(obj):
-        cursor.execute(
-            insert_string,
-            obj
-        )
-        sqlite3.IntegrityError
-        conn.commit()
+        try:
+            cursor.execute(
+                insert_string,
+                obj
+            )
+            conn.commit()
+        except sqlite3.IntegrityError:
+            print(obj)
 
     def update_in_db(obj):
         cursor.execute(update_string,
