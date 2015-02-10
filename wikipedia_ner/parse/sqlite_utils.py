@@ -44,5 +44,23 @@ def create_schema(conn, schema, table_name):
 
     return (insert_into_db, update_in_db, get_obj_from_db)
 
+import .sqlite_prot_buff.corpus_pb2 as corpus_pb2
 
+def convert_legacy_to_protobuff(legacy):
+    corpus = corpus_pb2.Corpus()
+    for example in legacy:
+        ex = corpus.example.add()
+        ex.words = example[0]
+        triggers = example[1]
+        for trigger_id, trigger_text in triggers:
+            trig = ex.triggers.add()
+            trig.id = trigger_id
+            trig.trigger = trigger_text
+    return corpus
 
+def deserialize_protobuf(blob):
+    corpus = corpus_pb2.Corpus()
+    return corpus.ParseFromString(blob)
+
+def serialize_protobuf(corpus):
+    return corpus.SerializeToString()
