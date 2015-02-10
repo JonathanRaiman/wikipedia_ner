@@ -6,11 +6,12 @@ def create_schema(conn, schema, table_name):
 
     insert_string = "INSERT into %s values %s"    % (table_name, symbolic_values)
     update_string = "UPDATE %s SET %s WHERE id=?" % (table_name, symbolic_assignment)
-    select_string = "SELECT * FROM %s WHERE id=?" % (table_name)
+    update_string_lines = "UPDATE %s SET lines=? WHERE id=?" % (table_name,)
+    select_string = "SELECT * FROM %s WHERE id=?" % (table_name,)
+    select_string_lines = "SELECT lines FROM %s WHERE id=?" % (table_name,)
     #lines pickle, parents pickle
 
     cursor = conn.cursor()
-
     schema_definition = ", \n".join([name + " " + row_type for name, row_type in schema])
 
     try:
@@ -36,31 +37,44 @@ def create_schema(conn, schema, table_name):
         cursor.execute(update_string,
             obj
         )
+        conn.commit()
+
+    def update_lines_in_db(obj):
+        cursor.execute(update_string_lines,
+            obj
+        )
+        conn.commit()
 
     def get_obj_from_db(key):
         cursor.execute(select_string, (key,))
         data = cursor.fetchone()
         return data
 
-    return (insert_into_db, update_in_db, get_obj_from_db)
+    def get_lines_from_db(key):
+        cursor.execute(select_string_lines, (key,))
+        data = cursor.fetchone()
+        return data
 
-import .sqlite_prot_buff.corpus_pb2 as corpus_pb2
+    return (insert_into_db, update_in_db, update_lines_in_db, get_obj_from_db, get_lines_from_db)
 
-def convert_legacy_to_protobuff(legacy):
+from .sqlite_proto_buff import corpus_pb2
+
+def convert_examples_to_protobuff(legacy):
     corpus = corpus_pb2.Corpus()
     for example in legacy:
         ex = corpus.example.add()
-        ex.words = example[0]
+        ex.words.extend(example[0])
         triggers = example[1]
         for trigger_id, trigger_text in triggers:
-            trig = ex.triggers.add()
+            trig = ex.trigger.add()
             trig.id = trigger_id
             trig.trigger = trigger_text
     return corpus
 
 def deserialize_protobuf(blob):
     corpus = corpus_pb2.Corpus()
-    return corpus.ParseFromString(blob)
+    corpus.ParseFromString(blob)
+    return corpus
 
 def serialize_protobuf(corpus):
     return corpus.SerializeToString()
