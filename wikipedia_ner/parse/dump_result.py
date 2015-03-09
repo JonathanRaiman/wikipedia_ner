@@ -83,13 +83,8 @@ from .sqlite_utils import create_schema, serialize_protobuf, deserialize_protobu
 import pickle
 from .sqlite_proto_buff import corpus_pb2
 
-def super_unpickler(x):
-    try:
-        return pickle.loads(x)
-    except pickle.UnpicklingError:
-        return deserialize_protobuf(x)
-
-sqlite3.register_converter("pickle", super_unpickler)
+sqlite3.register_converter("protobuf", deserialize_protobuf)
+sqlite3.register_converter("pickle", pickle.loads)
 sqlite3.register_adapter(corpus_pb2.Corpus, serialize_protobuf)
 sqlite3.register_adapter(list, pickle.dumps)
 sqlite3.register_adapter(set, pickle.dumps)
@@ -104,7 +99,7 @@ class DumpResultSqlite(DumpResult):
         insert_into_db, update_in_db, update_lines_in_db, get_obj_from_db, get_lines_from_db = create_schema(
             self.sqlite_conn,
             [
-                ("lines", "pickle"),
+                ("lines", "protobuf"),
                 ("parents", "pickle")
             ],
             "articles")

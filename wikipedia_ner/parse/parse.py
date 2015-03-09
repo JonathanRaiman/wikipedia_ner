@@ -34,9 +34,9 @@ def parse_dump(path, sqlite= False, commit_frequency = 300, sqlite_path="out.db"
 
 	for line, article_name, links in convert_wiki_to_lines(
 		wiki,
-		max_articles = max_articles,
-		clear_output = clear_output,
-		report_every = report_every,
+		max_articles   = max_articles,
+		clear_output   = clear_output,
+		report_every   = report_every,
 		line_converter = line_converter):
 			result.observe_line(line, article_name, links)
 
