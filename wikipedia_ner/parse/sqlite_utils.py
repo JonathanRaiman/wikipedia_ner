@@ -31,7 +31,7 @@ def create_schema(conn, schema, table_name):
             )
             conn.commit()
         except sqlite3.IntegrityError:
-            print(obj)
+            print("Error: sqlite3.IntegrityError => %r" % (obj))
 
     def update_in_db(obj):
         cursor.execute(update_string,

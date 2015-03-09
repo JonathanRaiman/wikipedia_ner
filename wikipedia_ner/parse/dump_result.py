@@ -166,6 +166,9 @@ class DumpResultSqlite(DumpResult):
             del self.to_update[key]
             del self.to_update_parents[key]
 
+    def close(self):
+        self.sqlite_conn.close()
+
     def observe_line(self, line, article_name, links):
         """
         Adds a set of line to the result by integrating the

@@ -43,5 +43,5 @@ def parse_dump(path, sqlite= False, commit_frequency = 300, sqlite_path="out.db"
 	if sqlite:
 		# flush out any remaining pieces to put in the db.
 		result.update_db()
-
+		result.close()
 	return result
