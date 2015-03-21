@@ -66,7 +66,7 @@ class DumpResult:
 
         Inputs
         ------
-        
+
         links list<tuple<str, str>> : a pairing of target and anchor text
 
         """
@@ -158,9 +158,9 @@ class DumpResultSqlite(DumpResult):
             # update that copy
             self.update_in_db(
                 (
-                    object_id,
                     corpus,
-                    parents.update( self.to_update_parents[key] )
+                    parents.update( self.to_update_parents[key] ),
+                    object_id
                 )
             )
             del self.to_update[key]
@@ -192,7 +192,7 @@ class DumpResultSqlite(DumpResult):
             if article_name not in self.to_update:
                 self.to_update[article_name] = []
                 self.to_update_parents[article_name] = set()
-            
+
             self.to_update[article_name].append(
                 (line, list(self.replace_links_with_index(links)))
             )
@@ -222,7 +222,7 @@ class DumpResultSqlite(DumpResult):
                 trig = ex.trigger.add()
                 trig.id = trigger_id
                 trig.trigger = trigger_text
-            
+
             cat_links = [self.targets[link[0]] for link in links if link[0].startswith("Category")]
             if len(cat_links) > 0:
                 self.to_insert_parents[article_name].update(
