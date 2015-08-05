@@ -15,7 +15,7 @@ def main(path, outpath):
         if destination in redirects_to:
             # if yes we can shortcut destination and
             # immediately connect to redirects_ot
-            redirects_to[page_title] = redirects_to
+            redirects_to[page_title] = redirects_to[destination]
         else:
             # if not wire up page_title to destination
             redirects_to[page_title] = destination
